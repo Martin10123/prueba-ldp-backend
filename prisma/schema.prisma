@@ -41,6 +41,32 @@ model User {
   @@map("users")
 }
 
+model Team {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  country   String
+  logoUrl   String?  @map("logo_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  players       Player[]
+  playerStats   PlayerStats[]
+
+  @@map("teams")
+}
+
+model Season {
+  id        String   @id @default(cuid())
+  year      Int      @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  playerStats PlayerStats[]
+
+  @@map("seasons")
+}
+
 model Player {
   id           String   @id @default(cuid())
   name         String
@@ -48,12 +74,41 @@ model Player {
   nationality  String
   position     Position
   photoUrl     String?  @map("photo_url")
-  currentTeam  String   @map("current_team")
+  currentTeamId String?  @map("current_team_id")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+
+  currentTeam Team?          @relation(fields: [currentTeamId], references: [id])
+  stats       PlayerStats[]
 
   @@index([name])
   @@index([position])
   @@index([nationality])
+  @@index([currentTeamId])
   @@map("players")
+}
+
+model PlayerStats {
+  id            String   @id @default(cuid())
+  playerId      String   @map("player_id")
+  seasonId      String   @map("season_id")
+  teamId        String   @map("team_id")
+  matchesPlayed Int      @map("matches_played")
+  goals         Int
+  assists       Int
+  yellowCards   Int      @map("yellow_cards")
+  redCards      Int      @map("red_cards")
+  minutesPlayed Int      @map("minutes_played")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  player Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  season Season  @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  team   Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, seasonId])
+  @@index([playerId])
+  @@index([seasonId])
+  @@index([teamId])
+  @@map("player_stats")
 }

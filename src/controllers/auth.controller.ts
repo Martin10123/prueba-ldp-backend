@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
+import { logger } from "../lib/logger";
 import { loginUser, registerUser } from "../services/auth.service";
 
 const registerSchema = z.object({
@@ -35,6 +36,12 @@ export async function register(req: Request, res: Response) {
       });
     }
 
+    logger.error("Unexpected error in register", {
+      method: req.method,
+      path: req.originalUrl,
+      error,
+    });
+
     return res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
       message: "Error inesperado",
@@ -63,6 +70,12 @@ export async function login(req: Request, res: Response) {
         message: "Correo electrónico o contraseña inválidos",
       });
     }
+
+    logger.error("Unexpected error in login", {
+      method: req.method,
+      path: req.originalUrl,
+      error,
+    });
 
     return res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",

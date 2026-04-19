@@ -1,6 +1,7 @@
 import { Position } from "@prisma/client";
 import type { Request, Response } from "express";
 import { z } from "zod";
+import { logger } from "../lib/logger";
 import { createPlayer, deletePlayer, getPlayerById, listPlayers, updatePlayer } from "../services/players.service";
 
 const listPlayersSchema = z.object({
@@ -17,7 +18,7 @@ const createPlayerSchema = z.object({
   nationality: z.string().trim().min(2),
   position: z.nativeEnum(Position),
   photoUrl: z.string().trim().url().optional(),
-  currentTeam: z.string().trim().min(2),
+  currentTeamId: z.string().trim().min(1).optional(),
 });
 
 const updatePlayerSchema = createPlayerSchema.partial().refine((data) => Object.keys(data).length > 0, {
@@ -58,6 +59,12 @@ export async function getPlayers(req: Request, res: Response) {
       });
     }
 
+    logger.error("Unexpected error in getPlayers", {
+      method: req.method,
+      path: req.originalUrl,
+      error,
+    });
+
     return res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
       message: "Error inesperado",
@@ -87,6 +94,12 @@ export async function getPlayer(req: Request, res: Response) {
       });
     }
 
+    logger.error("Unexpected error in getPlayer", {
+      method: req.method,
+      path: req.originalUrl,
+      error,
+    });
+
     return res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
       message: "Error inesperado",
@@ -99,7 +112,8 @@ export async function postPlayer(req: Request, res: Response) {
     const parsed = createPlayerSchema.parse(req.body);
     const data = {
       ...parsed,
-      photoUrl: parsed.photoUrl ?? null,
+      photoUrl: parsed.photoUrl,
+      currentTeamId: parsed.currentTeamId,
     };
 
     const player = await createPlayer(data);
@@ -112,6 +126,12 @@ export async function postPlayer(req: Request, res: Response) {
         issues: error.issues,
       });
     }
+
+    logger.error("Unexpected error in postPlayer", {
+      method: req.method,
+      path: req.originalUrl,
+      error,
+    });
 
     return res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
@@ -144,6 +164,12 @@ export async function patchPlayer(req: Request, res: Response) {
       });
     }
 
+    logger.error("Unexpected error in patchPlayer", {
+      method: req.method,
+      path: req.originalUrl,
+      error,
+    });
+
     return res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
       message: "Error inesperado",
@@ -172,6 +198,12 @@ export async function removePlayer(req: Request, res: Response) {
         message: "Jugador no encontrado",
       });
     }
+
+    logger.error("Unexpected error in removePlayer", {
+      method: req.method,
+      path: req.originalUrl,
+      error,
+    });
 
     return res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",

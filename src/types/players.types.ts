@@ -13,8 +13,8 @@ export type CreatePlayerInput = {
   birthDate: Date;
   nationality: string;
   position: Position;
-  photoUrl?: string | null;
-  currentTeam: string;
+  photoUrl?: string | undefined;
+  currentTeamId?: string | undefined;
 };
 
 export type UpdatePlayerInput = Prisma.PlayerUpdateInput;

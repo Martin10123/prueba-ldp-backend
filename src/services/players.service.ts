@@ -60,7 +60,12 @@ export function getPlayerById(id: string) {
 }
 
 export function createPlayer(data: CreatePlayerInput) {
-  return prisma.player.create({ data });
+  const normalizedData = {
+    ...data,
+    photoUrl: data.photoUrl ?? null,
+    currentTeamId: data.currentTeamId ?? null,
+  };
+  return prisma.player.create({ data: normalizedData });
 }
 
 export function updatePlayer(id: string, data: UpdatePlayerInput) {
