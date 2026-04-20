@@ -26,13 +26,19 @@ npm install
 ### 3. **Configurar variables de entorno**
 
 ```bash
+copy .env.example .env
+```
+
+En Linux/macOS puedes usar:
+
+```bash
 cp .env.example .env
 ```
 
 Edita `.env` con tus valores:
 
 ```env
-DATABASE_URL="postgresql://scout:password@db:5432/scout_db"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/scout_panel?schema=public"
 JWT_SECRET="tu-secret-key-super-segura"
 PORT=3000
 ```
@@ -40,13 +46,14 @@ PORT=3000
 ### 4. **Iniciar PostgreSQL con Docker**
 
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
 Este comando:
 - Inicia un contenedor PostgreSQL
-- Crea la base de datos `scout_db`
-- Crea el usuario `scout` con contraseña
+- Crea la base de datos `scout_panel`
+- Crea el usuario `postgres` con contraseña `postgres`
+- Expone PostgreSQL en `localhost:5433`
 
 ### 5. **Ejecutar migraciones y seed**
 
@@ -54,11 +61,17 @@ Este comando:
 # Generar cliente Prisma
 npm run prisma:generate
 
-# Ejecutar migraciones
-npx prisma migrate dev --name init
+# Aplicar migraciones versionadas
+npx prisma migrate deploy
 
 # Llenar base de datos con datos de prueba
 npx prisma db seed
+```
+
+Si haces cambios al schema durante desarrollo, crea una nueva migración con:
+
+```bash
+npx prisma migrate dev --name <nombre-cambio>
 ```
 
 ### 6. **Iniciar el servidor**
@@ -89,8 +102,41 @@ El servidor estará en `http://localhost:3000`
 ### Jugadores
 
 - `GET /players` - Listar jugadores (con filtros)
-  - Query params: `search`, `position`, `nationality`, `minAge`, `maxAge`
-  - Ejemplo: `/players?position=ST&minAge=18&maxAge=28`
+  - Query params: `search`, `position`, `nationality`, `minAge`, `maxAge`, `page`, `limit`
+  - `page` default: `1`
+  - `limit` default: `10` (máximo `50`)
+  - Ejemplo: `/players?position=ST&minAge=18&maxAge=28&page=1&limit=10`
+
+Respuesta (paginada):
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "clx...",
+        "name": "Lautaro Martinez",
+        "birthDate": "1997-08-22T00:00:00.000Z",
+        "nationality": "Argentina",
+        "position": "ST",
+        "photoUrl": "https://...",
+        "currentTeamId": "clx...",
+        "createdAt": "2026-04-20T00:00:00.000Z",
+        "updatedAt": "2026-04-20T00:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "total": 23,
+      "totalPages": 3,
+      "hasNext": true,
+      "hasPrev": false
+    }
+  }
+}
+```
 
 - `GET /players/:id` - Obtener detalles de un jugador
 
@@ -276,10 +322,10 @@ Códigos de error comunes:
 ### "Cannot reach database"
 ```bash
 # Verificar que Docker está corriendo
-docker-compose ps
+docker compose ps
 
 # Ver logs
-docker-compose logs db
+docker compose logs postgres
 ```
 
 ### "Migration failed"

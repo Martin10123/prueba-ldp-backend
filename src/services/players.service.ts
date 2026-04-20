@@ -1,6 +1,6 @@
 import { type Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import { CreatePlayerInput, ListPlayersFilters, UpdatePlayerInput } from "../types/players.types";
+import { CreatePlayerInput, ListPlayersParams, PaginatedPlayersResult, UpdatePlayerInput } from "../types/players.types";
 
 function getBirthDateRangeFromAge(minAge?: number, maxAge?: number) {
   const today = new Date();
@@ -22,7 +22,7 @@ function getBirthDateRangeFromAge(minAge?: number, maxAge?: number) {
   return range;
 }
 
-export async function listPlayers(filters: ListPlayersFilters) {
+export async function listPlayers({ filters, pagination }: ListPlayersParams): Promise<PaginatedPlayersResult<Prisma.PlayerGetPayload<object>>> {
   const where: Prisma.PlayerWhereInput = {};
 
   if (filters.search) {
@@ -47,12 +47,34 @@ export async function listPlayers(filters: ListPlayersFilters) {
     where.birthDate = getBirthDateRangeFromAge(filters.minAge, filters.maxAge);
   }
 
-  return prisma.player.findMany({
-    where,
-    orderBy: {
-      name: "asc",
+  const { page, limit } = pagination;
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    prisma.player.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        name: "asc",
+      },
+    }),
+    prisma.player.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  return {
+    items,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
     },
-  });
+  };
 }
 
 export function getPlayerById(id: string) {

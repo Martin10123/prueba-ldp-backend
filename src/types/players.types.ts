@@ -8,6 +8,28 @@ export type ListPlayersFilters = {
   maxAge?: number | undefined;
 };
 
+export type ListPlayersPagination = {
+  page: number;
+  limit: number;
+};
+
+export type ListPlayersParams = {
+  filters: ListPlayersFilters;
+  pagination: ListPlayersPagination;
+};
+
+export type PaginatedPlayersResult<T> = {
+  items: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+};
+
 export type CreatePlayerInput = {
   name: string;
   birthDate: Date;

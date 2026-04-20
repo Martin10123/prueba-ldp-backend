@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
+import { sendError, sendSuccess } from "../lib/http";
 import { logger } from "../lib/logger";
 import { loginUser, registerUser } from "../services/auth.service";
 
@@ -19,21 +20,14 @@ export async function register(req: Request, res: Response) {
     const data = registerSchema.parse(req.body);
     const response = await registerUser(data);
 
-    return res.status(201).json(response);
+    return sendSuccess(res, 201, response);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "Payload inválido",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Payload inválido", error.issues);
     }
 
     if (error instanceof Error && error.message === "EMAIL_ALREADY_EXISTS") {
-      return res.status(409).json({
-        error: "EMAIL_ALREADY_EXISTS",
-        message: "El correo electrónico ya está registrado",
-      });
+      return sendError(res, 409, "EMAIL_ALREADY_EXISTS", "El correo electrónico ya está registrado");
     }
 
     logger.error("Unexpected error in register", {
@@ -42,10 +36,7 @@ export async function register(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }
 
@@ -54,21 +45,14 @@ export async function login(req: Request, res: Response) {
     const data = loginSchema.parse(req.body);
     const response = await loginUser(data);
 
-    return res.status(200).json(response);
+    return sendSuccess(res, 200, response);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "Payload inválido",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Payload inválido", error.issues);
     }
 
     if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
-      return res.status(401).json({
-        error: "INVALID_CREDENTIALS",
-        message: "Correo electrónico o contraseña inválidos",
-      });
+      return sendError(res, 401, "INVALID_CREDENTIALS", "Correo electrónico o contraseña inválidos");
     }
 
     logger.error("Unexpected error in login", {
@@ -77,13 +61,10 @@ export async function login(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }
 
 export async function me(req: Request, res: Response) {
-  return res.status(200).json({ user: req.user });
+  return sendSuccess(res, 200, req.user);
 }

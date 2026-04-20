@@ -1,6 +1,7 @@
 import { Position } from "@prisma/client";
 import type { Request, Response } from "express";
 import { z } from "zod";
+import { sendError, sendSuccess } from "../lib/http";
 import { logger } from "../lib/logger";
 import { createPlayer, deletePlayer, getPlayerById, listPlayers, updatePlayer } from "../services/players.service";
 
@@ -10,6 +11,8 @@ const listPlayersSchema = z.object({
   nationality: z.string().trim().min(1).optional(),
   minAge: z.coerce.number().int().min(0).optional(),
   maxAge: z.coerce.number().int().min(0).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 
 const createPlayerSchema = z.object({
@@ -35,28 +38,25 @@ function omitUndefined<T extends Record<string, unknown>>(obj: T) {
 
 export async function getPlayers(req: Request, res: Response) {
   try {
-    const filters = listPlayersSchema.parse(req.query);
+    const query = listPlayersSchema.parse(req.query);
+    const { page, limit, ...filters } = query;
 
     if (
       typeof filters.minAge === "number" &&
       typeof filters.maxAge === "number" &&
       filters.minAge > filters.maxAge
     ) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "minAge no puede ser mayor que maxAge",
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "minAge no puede ser mayor que maxAge");
     }
 
-    const players = await listPlayers(filters);
-    return res.status(200).json({ data: players });
+    const players = await listPlayers({
+      filters,
+      pagination: { page, limit },
+    });
+    return sendSuccess(res, 200, players);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "Parámetros inválidos",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Parámetros inválidos", error.issues);
     }
 
     logger.error("Unexpected error in getPlayers", {
@@ -65,10 +65,7 @@ export async function getPlayers(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }
 
@@ -78,20 +75,13 @@ export async function getPlayer(req: Request, res: Response) {
     const player = await getPlayerById(id);
 
     if (!player) {
-      return res.status(404).json({
-        error: "PLAYER_NOT_FOUND",
-        message: "Jugador no encontrado",
-      });
+      return sendError(res, 404, "PLAYER_NOT_FOUND", "Jugador no encontrado");
     }
 
-    return res.status(200).json({ data: player });
+    return sendSuccess(res, 200, player);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "Parámetros inválidos",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Parámetros inválidos", error.issues);
     }
 
     logger.error("Unexpected error in getPlayer", {
@@ -100,10 +90,7 @@ export async function getPlayer(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }
 
@@ -117,14 +104,10 @@ export async function postPlayer(req: Request, res: Response) {
     };
 
     const player = await createPlayer(data);
-    return res.status(201).json({ data: player });
+    return sendSuccess(res, 201, player);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "Payload inválido",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Payload inválido", error.issues);
     }
 
     logger.error("Unexpected error in postPlayer", {
@@ -133,10 +116,7 @@ export async function postPlayer(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }
 
@@ -147,21 +127,14 @@ export async function patchPlayer(req: Request, res: Response) {
     const data = omitUndefined(parsed);
     const player = await updatePlayer(id, data);
 
-    return res.status(200).json({ data: player });
+    return sendSuccess(res, 200, player);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "Payload inválido",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Payload inválido", error.issues);
     }
 
     if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2025") {
-      return res.status(404).json({
-        error: "PLAYER_NOT_FOUND",
-        message: "Jugador no encontrado",
-      });
+      return sendError(res, 404, "PLAYER_NOT_FOUND", "Jugador no encontrado");
     }
 
     logger.error("Unexpected error in patchPlayer", {
@@ -170,10 +143,7 @@ export async function patchPlayer(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }
 
@@ -185,18 +155,11 @@ export async function removePlayer(req: Request, res: Response) {
     return res.status(204).send();
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: "VALIDATION_ERROR",
-        message: "Parámetros inválidos",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Parámetros inválidos", error.issues);
     }
 
     if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2025") {
-      return res.status(404).json({
-        error: "PLAYER_NOT_FOUND",
-        message: "Jugador no encontrado",
-      });
+      return sendError(res, 404, "PLAYER_NOT_FOUND", "Jugador no encontrado");
     }
 
     logger.error("Unexpected error in removePlayer", {
@@ -205,9 +168,6 @@ export async function removePlayer(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }

@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { sendError } from "../lib/http";
 import { prisma } from "../lib/prisma";
 import { verifyAuthToken } from "../lib/jwt";
 
@@ -16,10 +17,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const token = getTokenFromHeader(req.headers.authorization);
 
     if (!token) {
-      return res.status(401).json({
-        error: "UNAUTHORIZED",
-        message: "Token de autenticación no proporcionado",
-      });
+      return sendError(res, 401, "UNAUTHORIZED", "Token de autenticación no proporcionado");
     }
 
     const payload = verifyAuthToken(token);
@@ -36,18 +34,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     });
 
     if (!user) {
-      return res.status(401).json({
-        error: "UNAUTHORIZED",
-        message: "El usuario correspondiente al token no existe",
-      });
+      return sendError(res, 401, "UNAUTHORIZED", "El usuario correspondiente al token no existe");
     }
 
     req.user = user;
     return next();
   } catch {
-    return res.status(401).json({
-      error: "UNAUTHORIZED",
-      message: "Token inválido o expirado",
-    });
+    return sendError(res, 401, "UNAUTHORIZED", "Token inválido o expirado");
   }
 }

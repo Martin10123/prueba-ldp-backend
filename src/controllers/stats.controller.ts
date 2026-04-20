@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
+import { sendError, sendSuccess } from "../lib/http";
 import { logger } from "../lib/logger";
 import { comparePlayerStats, getPlayerStatsBySeason } from "../services/stats.service";
 
@@ -22,18 +23,10 @@ export async function getPlayerStats(req: Request, res: Response) {
 
     const stats = await getPlayerStatsBySeason(id, query.seasonId);
 
-    return res.status(200).json({
-      success: true,
-      data: stats,
-    });
+    return sendSuccess(res, 200, stats);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: "VALIDATION_ERROR",
-        message: "Query inválida",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Query inválida", error.issues);
     }
 
     logger.error("Unexpected error in getPlayerStats", {
@@ -42,11 +35,7 @@ export async function getPlayerStats(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      success: false,
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }
 
@@ -55,43 +44,23 @@ export async function comparePlayersController(req: Request, res: Response) {
     const query = compareQuerySchema.parse(req.query);
 
     if (query.ids.length < 2 || query.ids.length > 3) {
-      return res.status(400).json({
-        success: false,
-        error: "VALIDATION_ERROR",
-        message: "Debes comparar entre 2 y 3 jugadores",
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Debes comparar entre 2 y 3 jugadores");
     }
 
     const players = await comparePlayerStats(query.ids);
 
-    return res.status(200).json({
-      success: true,
-      data: players,
-    });
+    return sendSuccess(res, 200, players);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: "VALIDATION_ERROR",
-        message: "Query inválida",
-        issues: error.issues,
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "Query inválida", error.issues);
     }
 
     if (error instanceof Error && error.message === "SOME_PLAYERS_NOT_FOUND") {
-      return res.status(404).json({
-        success: false,
-        error: "NOT_FOUND",
-        message: "Uno o más jugadores no existen",
-      });
+      return sendError(res, 404, "NOT_FOUND", "Uno o más jugadores no existen");
     }
 
     if (error instanceof Error && error.message === "INVALID_PLAYER_IDS") {
-      return res.status(400).json({
-        success: false,
-        error: "VALIDATION_ERROR",
-        message: "IDs de jugadores inválidos",
-      });
+      return sendError(res, 400, "VALIDATION_ERROR", "IDs de jugadores inválidos");
     }
 
     logger.error("Unexpected error in comparePlayersController", {
@@ -100,10 +69,6 @@ export async function comparePlayersController(req: Request, res: Response) {
       error,
     });
 
-    return res.status(500).json({
-      success: false,
-      error: "INTERNAL_SERVER_ERROR",
-      message: "Error inesperado",
-    });
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
   }
 }

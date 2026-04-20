@@ -2,6 +2,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import morgan from "morgan";
+import { sendError, sendSuccess } from "./lib/http";
 import { logger } from "./lib/logger";
 import { authRoutes } from "./routes/auth.routes";
 import { playersRoutes } from "./routes/players.routes";
@@ -22,17 +23,14 @@ app.use(
 );
 
 app.get("/health", (_req, res) => {
-	res.json({ ok: true });
+	return sendSuccess(res, 200, { ok: true });
 });
 
 app.use("/auth", authRoutes);
 app.use("/players", playersRoutes);
 
 app.use((req, res) => {
-	res.status(404).json({
-		error: "NOT_FOUND",
-		message: `Route ${req.method} ${req.originalUrl} not found`,
-	});
+	return sendError(res, 404, "NOT_FOUND", `Route ${req.method} ${req.originalUrl} not found`);
 });
 
 app.listen(port, () => {
