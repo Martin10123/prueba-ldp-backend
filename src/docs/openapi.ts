@@ -133,6 +133,7 @@ export const openApiSpec = {
           position: { $ref: "#/components/schemas/Position" },
           photoUrl: { type: "string", format: "uri", nullable: true },
           currentTeamId: { type: "string", nullable: true },
+          currentTeamName: { type: "string", nullable: true },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
         },

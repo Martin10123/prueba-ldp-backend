@@ -2,6 +2,29 @@ import { type Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { CreatePlayerInput, ListPlayersParams, PaginatedPlayersResult, UpdatePlayerInput } from "../types/players.types";
 
+type PlayerWithTeamName = Prisma.PlayerGetPayload<{
+  include: {
+    currentTeam: {
+      select: {
+        name: true;
+      };
+    };
+  };
+}>;
+
+export type PlayerResponse = Omit<PlayerWithTeamName, "currentTeam"> & {
+  currentTeamName: string | null;
+};
+
+function mapPlayerToResponse(player: PlayerWithTeamName): PlayerResponse {
+  const { currentTeam, ...rest } = player;
+
+  return {
+    ...rest,
+    currentTeamName: currentTeam?.name ?? null,
+  };
+}
+
 function getBirthDateRangeFromAge(minAge?: number, maxAge?: number) {
   const today = new Date();
   const range: { gte?: Date; lte?: Date } = {};
@@ -22,7 +45,7 @@ function getBirthDateRangeFromAge(minAge?: number, maxAge?: number) {
   return range;
 }
 
-export async function listPlayers({ filters, pagination }: ListPlayersParams): Promise<PaginatedPlayersResult<Prisma.PlayerGetPayload<object>>> {
+export async function listPlayers({ filters, pagination }: ListPlayersParams): Promise<PaginatedPlayersResult<PlayerResponse>> {
   const where: Prisma.PlayerWhereInput = {};
 
   if (filters.search) {
@@ -55,6 +78,13 @@ export async function listPlayers({ filters, pagination }: ListPlayersParams): P
       where,
       skip,
       take: limit,
+      include: {
+        currentTeam: {
+          select: {
+            name: true,
+          },
+        },
+      },
       orderBy: {
         name: "asc",
       },
@@ -65,7 +95,7 @@ export async function listPlayers({ filters, pagination }: ListPlayersParams): P
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return {
-    items,
+    items: items.map(mapPlayerToResponse),
     meta: {
       page,
       limit,
@@ -77,24 +107,60 @@ export async function listPlayers({ filters, pagination }: ListPlayersParams): P
   };
 }
 
-export function getPlayerById(id: string) {
-  return prisma.player.findUnique({ where: { id } });
+export async function getPlayerById(id: string) {
+  const player = await prisma.player.findUnique({
+    where: { id },
+    include: {
+      currentTeam: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  if (!player) {
+    return null;
+  }
+
+  return mapPlayerToResponse(player);
 }
 
-export function createPlayer(data: CreatePlayerInput) {
+export async function createPlayer(data: CreatePlayerInput) {
   const normalizedData = {
     ...data,
     photoUrl: data.photoUrl ?? null,
     currentTeamId: data.currentTeamId ?? null,
   };
-  return prisma.player.create({ data: normalizedData });
+
+  const player = await prisma.player.create({
+    data: normalizedData,
+    include: {
+      currentTeam: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  return mapPlayerToResponse(player);
 }
 
-export function updatePlayer(id: string, data: UpdatePlayerInput) {
-  return prisma.player.update({
+export async function updatePlayer(id: string, data: UpdatePlayerInput) {
+  const player = await prisma.player.update({
     where: { id },
     data,
+    include: {
+      currentTeam: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
+
+  return mapPlayerToResponse(player);
 }
 
 export function deletePlayer(id: string) {
