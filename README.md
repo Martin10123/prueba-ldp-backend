@@ -146,6 +146,11 @@ Respuesta (paginada):
 
 - `GET /players/:id` - Obtener detalles de un jugador
 
+- `GET /players/options` - Obtener listas para selección en frontend
+  - `teams`: equipos disponibles (`id`, `name`)
+  - `nationalities`: nacionalidades disponibles
+  - `positions`: posiciones válidas
+
 - `GET /players/:id/stats` - Obtener estadísticas de un jugador
   - Query params: `seasonId` (opcional)
 
@@ -154,6 +159,10 @@ Respuesta (paginada):
 
 - `POST /players` - Crear nuevo jugador (protegido)
 - `PATCH /players/:id` - Actualizar jugador (protegido)
+  - Permite: `name`, `currentTeamId`, `nationality`, `position`, `photoUrl`
+  - No permite editar: `birthDate`
+  - `currentTeamId` debe ser un ID de equipo válido
+  - `nationality` debe existir en la lista de `/players/options`
 - `DELETE /players/:id` - Eliminar jugador (protegido)
 
 ## 🔐 Autenticación

@@ -1,6 +1,12 @@
-import { type Prisma } from "@prisma/client";
+import { Position, type Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import { CreatePlayerInput, ListPlayersParams, PaginatedPlayersResult, UpdatePlayerInput } from "../types/players.types";
+import {
+  CreatePlayerInput,
+  ListPlayersParams,
+  PaginatedPlayersResult,
+  PlayerSelectableOptions,
+  UpdatePlayerInput,
+} from "../types/players.types";
 
 type PlayerWithTeamName = Prisma.PlayerGetPayload<{
   include: {
@@ -29,6 +35,24 @@ async function ensureTeamExists(teamId: string): Promise<void> {
 
   if (!team) {
     throw new Error("TEAM_NOT_FOUND");
+  }
+}
+
+async function ensureNationalityExists(nationality: string): Promise<void> {
+  const existingNationality = await prisma.player.findFirst({
+    where: {
+      nationality: {
+        equals: nationality,
+        mode: "insensitive",
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!existingNationality) {
+    throw new Error("NATIONALITY_NOT_ALLOWED");
   }
 }
 
@@ -143,6 +167,35 @@ export async function getPlayerById(id: string) {
   return mapPlayerToResponse(player);
 }
 
+export async function listPlayerSelectableOptions(): Promise<PlayerSelectableOptions> {
+  const [teams, nationalityRows] = await Promise.all([
+    prisma.team.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    }),
+    prisma.player.findMany({
+      select: {
+        nationality: true,
+      },
+      distinct: ["nationality"],
+      orderBy: {
+        nationality: "asc",
+      },
+    }),
+  ]);
+
+  return {
+    teams,
+    nationalities: nationalityRows.map((item) => item.nationality),
+    positions: Object.values(Position),
+  };
+}
+
 export async function createPlayer(data: CreatePlayerInput) {
   if (data.currentTeamId) {
     await ensureTeamExists(data.currentTeamId);
@@ -180,11 +233,14 @@ export async function createPlayer(data: CreatePlayerInput) {
 export async function updatePlayer(id: string, data: UpdatePlayerInput) {
   const updateData: Prisma.PlayerUpdateInput = {
     ...(data.name !== undefined ? { name: data.name } : {}),
-    ...(data.birthDate !== undefined ? { birthDate: data.birthDate } : {}),
     ...(data.nationality !== undefined ? { nationality: data.nationality } : {}),
     ...(data.position !== undefined ? { position: data.position } : {}),
     ...(data.photoUrl !== undefined ? { photoUrl: data.photoUrl } : {}),
   };
+
+  if (data.nationality !== undefined) {
+    await ensureNationalityExists(data.nationality);
+  }
 
   if (data.currentTeamId !== undefined) {
     if (data.currentTeamId === null) {

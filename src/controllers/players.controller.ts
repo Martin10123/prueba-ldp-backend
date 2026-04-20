@@ -3,7 +3,14 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { sendError, sendSuccess } from "../lib/http";
 import { logger } from "../lib/logger";
-import { createPlayer, deletePlayer, getPlayerById, listPlayers, updatePlayer } from "../services/players.service";
+import {
+  createPlayer,
+  deletePlayer,
+  getPlayerById,
+  listPlayerSelectableOptions,
+  listPlayers,
+  updatePlayer,
+} from "../services/players.service";
 
 const listPlayersSchema = z.object({
   search: z.string().trim().min(1).optional(),
@@ -27,7 +34,6 @@ const createPlayerSchema = z.object({
 const updatePlayerSchema = z
   .object({
     name: z.string().trim().min(2).optional(),
-    birthDate: z.coerce.date().optional(),
     nationality: z.string().trim().min(2).optional(),
     position: z.nativeEnum(Position).optional(),
     photoUrl: z.string().trim().url().optional(),
@@ -103,6 +109,19 @@ export async function getPlayer(req: Request, res: Response) {
   }
 }
 
+export async function getPlayerSelectableOptions(_req: Request, res: Response) {
+  try {
+    const options = await listPlayerSelectableOptions();
+    return sendSuccess(res, 200, options);
+  } catch (error) {
+    logger.error("Unexpected error in getPlayerSelectableOptions", {
+      error,
+    });
+
+    return sendError(res, 500, "INTERNAL_SERVER_ERROR", "Error inesperado");
+  }
+}
+
 export async function postPlayer(req: Request, res: Response) {
   try {
     const parsed = createPlayerSchema.parse(req.body);
@@ -148,6 +167,15 @@ export async function patchPlayer(req: Request, res: Response) {
 
     if (error instanceof Error && error.message === "TEAM_NOT_FOUND") {
       return sendError(res, 400, "VALIDATION_ERROR", "Equipo no encontrado");
+    }
+
+    if (error instanceof Error && error.message === "NATIONALITY_NOT_ALLOWED") {
+      return sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        "Nacionalidad no permitida. Debe seleccionar una de la lista disponible"
+      );
     }
 
     if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2025") {

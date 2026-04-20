@@ -199,15 +199,71 @@ export const openApiSpec = {
       },
       UpdatePlayerBody: {
         type: "object",
+        description:
+          "Campos opcionales permitidos para actualizar un jugador. Se puede cambiar nombre, equipo (por ID), nacionalidad, posicion y foto. No se permite cambiar birthDate.",
         properties: {
-          name: { type: "string", minLength: 2 },
-          birthDate: { type: "string", format: "date-time" },
-          nationality: { type: "string", minLength: 2 },
+          name: {
+            type: "string",
+            minLength: 2,
+            description: "Nombre del jugador",
+            example: "Julian Alvarez",
+          },
+          nationality: {
+            type: "string",
+            minLength: 2,
+            description: "Nacionalidad existente en el catalogo de /players/options",
+            example: "Argentina",
+          },
           position: { $ref: "#/components/schemas/Position" },
-          photoUrl: { type: "string", format: "uri", nullable: true },
-          currentTeamId: { type: "string", nullable: true },
+          photoUrl: {
+            type: "string",
+            format: "uri",
+            nullable: true,
+            description: "URL de la foto del jugador",
+            example: "https://cdn.example.com/players/julian-alvarez.jpg",
+          },
+          currentTeamId: {
+            type: "string",
+            nullable: true,
+            description: "ID del equipo actual. Enviar null para quitar equipo.",
+            example: "cm8w2f9x80000j8x9z6v8m8a1",
+          },
         },
         minProperties: 1,
+      },
+      PlayerSelectableTeam: {
+        type: "object",
+        properties: {
+          id: { type: "string", example: "cm8w2f9x80000j8x9z6v8m8a1" },
+          name: { type: "string", example: "Inter" },
+        },
+        required: ["id", "name"],
+      },
+      PlayerSelectableOptionsData: {
+        type: "object",
+        properties: {
+          teams: {
+            type: "array",
+            items: { $ref: "#/components/schemas/PlayerSelectableTeam" },
+          },
+          nationalities: {
+            type: "array",
+            items: { type: "string" },
+          },
+          positions: {
+            type: "array",
+            items: { $ref: "#/components/schemas/Position" },
+          },
+        },
+        required: ["teams", "nationalities", "positions"],
+      },
+      PlayerSelectableOptionsResponse: {
+        type: "object",
+        properties: {
+          success: { type: "boolean", example: true },
+          data: { $ref: "#/components/schemas/PlayerSelectableOptionsData" },
+        },
+        required: ["success", "data"],
       },
       PlayerStat: {
         type: "object",
@@ -534,6 +590,33 @@ export const openApiSpec = {
         },
       },
     },
+    "/players/options": {
+      get: {
+        tags: ["Players"],
+        summary: "Listar opciones seleccionables para editar jugador",
+        description:
+          "Devuelve catalogos para el front: equipos (id/nombre), nacionalidades disponibles y posiciones validas.",
+        security: [{ BearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Catalogos de seleccion",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/PlayerSelectableOptionsResponse" },
+              },
+            },
+          },
+          "401": {
+            description: "No autorizado",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+        },
+      },
+    },
     "/players/{id}": {
       get: {
         tags: ["Players"],
@@ -585,6 +668,8 @@ export const openApiSpec = {
       patch: {
         tags: ["Players"],
         summary: "Actualizar jugador",
+        description:
+          "Recibe el ID del jugador en la ruta y permite actualizar name, currentTeamId, nationality, position y photoUrl. No permite actualizar birthDate.",
         security: [{ BearerAuth: [] }],
         parameters: [
           {
@@ -592,6 +677,7 @@ export const openApiSpec = {
             in: "path",
             required: true,
             schema: { type: "string" },
+            description: "ID del jugador a actualizar",
           },
         ],
         requestBody: {
@@ -599,6 +685,28 @@ export const openApiSpec = {
           content: {
             "application/json": {
               schema: { $ref: "#/components/schemas/UpdatePlayerBody" },
+              examples: {
+                updateTeam: {
+                  summary: "Actualizar equipo por ID",
+                  value: {
+                    currentTeamId: "cm8w2f9x80000j8x9z6v8m8a1",
+                  },
+                },
+                updateNameAndPhoto: {
+                  summary: "Actualizar nombre y foto",
+                  value: {
+                    name: "Julian Alvarez",
+                    photoUrl: "https://cdn.example.com/players/julian-alvarez.jpg",
+                  },
+                },
+                updateNationalityAndPosition: {
+                  summary: "Actualizar nacionalidad y posicion",
+                  value: {
+                    nationality: "Argentina",
+                    position: "ST",
+                  },
+                },
+              },
             },
           },
         },

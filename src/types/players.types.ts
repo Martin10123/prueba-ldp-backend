@@ -40,7 +40,18 @@ export type CreatePlayerInput = {
 };
 
 export type UpdatePlayerInput = Partial<
-  Omit<CreatePlayerInput, "currentTeamId"> & {
+  Pick<CreatePlayerInput, "name" | "nationality" | "position" | "photoUrl"> & {
     currentTeamId: string | null;
   }
 >;
+
+export type PlayerSelectableTeam = {
+  id: string;
+  name: string;
+};
+
+export type PlayerSelectableOptions = {
+  teams: PlayerSelectableTeam[];
+  nationalities: string[];
+  positions: Position[];
+};
