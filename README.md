@@ -128,6 +128,7 @@ Respuesta (paginada):
         "photoUrl": "https://...",
         "currentTeamId": "clx...",
         "currentTeamName": "Inter",
+        "isActive": true,
         "createdAt": "2026-04-20T00:00:00.000Z",
         "updatedAt": "2026-04-20T00:00:00.000Z"
       }
@@ -163,7 +164,9 @@ Respuesta (paginada):
   - No permite editar: `birthDate`
   - `currentTeamId` debe ser un ID de equipo válido
   - `nationality` debe existir en la lista de `/players/options`
-- `DELETE /players/:id` - Eliminar jugador (protegido)
+- `DELETE /players/:id` - Desactivar jugador (soft delete, protegido)
+  - No elimina el registro en base de datos
+  - Cambia `isActive` a `false`
 
 ## 🔐 Autenticación
 
@@ -206,6 +209,7 @@ curl -X POST http://localhost:3000/auth/login \
 - `photoUrl` - URL de foto (opcional)
 - `currentTeamId` - FK a Team (para crear/editar)
 - `currentTeamName` - Nombre del equipo actual (en respuesta)
+- `isActive` - Estado lógico del jugador (`true` activo, `false` desactivado)
 
 ### Season
 - `id` - UUID único

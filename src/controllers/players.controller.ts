@@ -178,6 +178,10 @@ export async function patchPlayer(req: Request, res: Response) {
       );
     }
 
+    if (error instanceof Error && error.message === "PLAYER_NOT_FOUND") {
+      return sendError(res, 404, "PLAYER_NOT_FOUND", "Jugador no encontrado");
+    }
+
     if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2025") {
       return sendError(res, 404, "PLAYER_NOT_FOUND", "Jugador no encontrado");
     }
@@ -195,12 +199,16 @@ export async function patchPlayer(req: Request, res: Response) {
 export async function removePlayer(req: Request, res: Response) {
   try {
     const { id } = idParamsSchema.parse(req.params);
-    await deletePlayer(id);
+    const player = await deletePlayer(id);
 
-    return res.status(204).send();
+    return sendSuccess(res, 200, player);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return sendError(res, 400, "VALIDATION_ERROR", "Parámetros inválidos", error.issues);
+    }
+
+    if (error instanceof Error && error.message === "PLAYER_NOT_FOUND") {
+      return sendError(res, 404, "PLAYER_NOT_FOUND", "Jugador no encontrado");
     }
 
     if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2025") {

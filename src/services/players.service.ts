@@ -87,7 +87,9 @@ function getBirthDateRangeFromAge(minAge?: number, maxAge?: number) {
 }
 
 export async function listPlayers({ filters, pagination }: ListPlayersParams): Promise<PaginatedPlayersResult<PlayerResponse>> {
-  const where: Prisma.PlayerWhereInput = {};
+  const where: Prisma.PlayerWhereInput = {
+    isActive: true,
+  };
 
   if (filters.search) {
     where.name = {
@@ -149,8 +151,11 @@ export async function listPlayers({ filters, pagination }: ListPlayersParams): P
 }
 
 export async function getPlayerById(id: string) {
-  const player = await prisma.player.findUnique({
-    where: { id },
+  const player = await prisma.player.findFirst({
+    where: {
+      id,
+      isActive: true,
+    },
     include: {
       currentTeam: {
         select: {
@@ -181,6 +186,9 @@ export async function listPlayerSelectableOptions(): Promise<PlayerSelectableOpt
     prisma.player.findMany({
       select: {
         nationality: true,
+      },
+      where: {
+        isActive: true,
       },
       distinct: ["nationality"],
       orderBy: {
@@ -231,6 +239,20 @@ export async function createPlayer(data: CreatePlayerInput) {
 }
 
 export async function updatePlayer(id: string, data: UpdatePlayerInput) {
+  const existingPlayer = await prisma.player.findFirst({
+    where: {
+      id,
+      isActive: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!existingPlayer) {
+    throw new Error("PLAYER_NOT_FOUND");
+  }
+
   const updateData: Prisma.PlayerUpdateInput = {
     ...(data.name !== undefined ? { name: data.name } : {}),
     ...(data.nationality !== undefined ? { nationality: data.nationality } : {}),
@@ -272,6 +294,34 @@ export async function updatePlayer(id: string, data: UpdatePlayerInput) {
   return mapPlayerToResponse(player);
 }
 
-export function deletePlayer(id: string) {
-  return prisma.player.delete({ where: { id } });
+export async function deletePlayer(id: string) {
+  const existingPlayer = await prisma.player.findFirst({
+    where: {
+      id,
+      isActive: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!existingPlayer) {
+    throw new Error("PLAYER_NOT_FOUND");
+  }
+
+  const player = await prisma.player.update({
+    where: { id },
+    data: {
+      isActive: false,
+    },
+    include: {
+      currentTeam: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  return mapPlayerToResponse(player);
 }

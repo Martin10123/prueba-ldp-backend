@@ -134,6 +134,7 @@ export const openApiSpec = {
           photoUrl: { type: "string", format: "uri", nullable: true },
           currentTeamId: { type: "string", nullable: true },
           currentTeamName: { type: "string", nullable: true },
+          isActive: { type: "boolean", example: true },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
         },
@@ -143,6 +144,7 @@ export const openApiSpec = {
           "birthDate",
           "nationality",
           "position",
+          "isActive",
           "createdAt",
           "updatedAt",
         ],
@@ -747,7 +749,8 @@ export const openApiSpec = {
       },
       delete: {
         tags: ["Players"],
-        summary: "Eliminar jugador",
+        summary: "Desactivar jugador (soft delete)",
+        description: "No elimina el registro fisicamente. Marca isActive=false.",
         security: [{ BearerAuth: [] }],
         parameters: [
           {
@@ -758,8 +761,13 @@ export const openApiSpec = {
           },
         ],
         responses: {
-          "204": {
-            description: "Jugador eliminado",
+          "200": {
+            description: "Jugador desactivado",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/PlayerResponse" },
+              },
+            },
           },
           "400": {
             description: "Parametros invalidos",

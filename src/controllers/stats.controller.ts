@@ -29,6 +29,10 @@ export async function getPlayerStats(req: Request, res: Response) {
       return sendError(res, 400, "VALIDATION_ERROR", "Query inválida", error.issues);
     }
 
+    if (error instanceof Error && error.message === "PLAYER_NOT_FOUND") {
+      return sendError(res, 404, "PLAYER_NOT_FOUND", "Jugador no encontrado");
+    }
+
     logger.error("Unexpected error in getPlayerStats", {
       method: req.method,
       path: req.originalUrl,
