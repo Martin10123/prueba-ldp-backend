@@ -39,4 +39,8 @@ export type CreatePlayerInput = {
   currentTeamId?: string | undefined;
 };
 
-export type UpdatePlayerInput = Prisma.PlayerUpdateInput;
+export type UpdatePlayerInput = Partial<
+  Omit<CreatePlayerInput, "currentTeamId"> & {
+    currentTeamId: string | null;
+  }
+>;

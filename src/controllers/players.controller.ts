@@ -24,9 +24,18 @@ const createPlayerSchema = z.object({
   currentTeamId: z.string().trim().min(1).optional(),
 });
 
-const updatePlayerSchema = createPlayerSchema.partial().refine((data) => Object.keys(data).length > 0, {
-  message: "Debe enviar al menos un campo para actualizar",
-});
+const updatePlayerSchema = z
+  .object({
+    name: z.string().trim().min(2).optional(),
+    birthDate: z.coerce.date().optional(),
+    nationality: z.string().trim().min(2).optional(),
+    position: z.nativeEnum(Position).optional(),
+    photoUrl: z.string().trim().url().optional(),
+    currentTeamId: z.union([z.string().trim().min(1), z.null()]).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Debe enviar al menos un campo para actualizar",
+  });
 
 const idParamsSchema = z.object({
   id: z.string().trim().min(1),
@@ -110,6 +119,10 @@ export async function postPlayer(req: Request, res: Response) {
       return sendError(res, 400, "VALIDATION_ERROR", "Payload inválido", error.issues);
     }
 
+    if (error instanceof Error && error.message === "TEAM_NOT_FOUND") {
+      return sendError(res, 400, "VALIDATION_ERROR", "Equipo no encontrado");
+    }
+
     logger.error("Unexpected error in postPlayer", {
       method: req.method,
       path: req.originalUrl,
@@ -131,6 +144,10 @@ export async function patchPlayer(req: Request, res: Response) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return sendError(res, 400, "VALIDATION_ERROR", "Payload inválido", error.issues);
+    }
+
+    if (error instanceof Error && error.message === "TEAM_NOT_FOUND") {
+      return sendError(res, 400, "VALIDATION_ERROR", "Equipo no encontrado");
     }
 
     if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2025") {

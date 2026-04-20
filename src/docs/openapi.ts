@@ -193,7 +193,7 @@ export const openApiSpec = {
           nationality: { type: "string", minLength: 2, example: "Argentina" },
           position: { $ref: "#/components/schemas/Position" },
           photoUrl: { type: "string", format: "uri", nullable: true },
-          currentTeamId: { type: "string", nullable: true },
+          currentTeamId: { type: "string", nullable: true, example: "cm8w2f9x80000j8x9z6v8m8a1" },
         },
         required: ["name", "birthDate", "nationality", "position"],
       },

@@ -12,15 +12,32 @@ type PlayerWithTeamName = Prisma.PlayerGetPayload<{
   };
 }>;
 
-export type PlayerResponse = Omit<PlayerWithTeamName, "currentTeam"> & {
+export type PlayerResponse = Omit<PlayerWithTeamName, "currentTeam" | "currentTeamId"> & {
+  currentTeamId: string | null;
   currentTeamName: string | null;
 };
 
+async function ensureTeamExists(teamId: string): Promise<void> {
+  const team = await prisma.team.findUnique({
+    where: {
+      id: teamId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!team) {
+    throw new Error("TEAM_NOT_FOUND");
+  }
+}
+
 function mapPlayerToResponse(player: PlayerWithTeamName): PlayerResponse {
-  const { currentTeam, ...rest } = player;
+  const { currentTeam, currentTeamId, ...rest } = player;
 
   return {
     ...rest,
+    currentTeamId,
     currentTeamName: currentTeam?.name ?? null,
   };
 }
@@ -61,7 +78,7 @@ export async function listPlayers({ filters, pagination }: ListPlayersParams): P
 
   if (filters.nationality) {
     where.nationality = {
-      equals: filters.nationality,
+      contains: filters.nationality,
       mode: "insensitive",
     };
   }
@@ -127,14 +144,27 @@ export async function getPlayerById(id: string) {
 }
 
 export async function createPlayer(data: CreatePlayerInput) {
-  const normalizedData = {
-    ...data,
-    photoUrl: data.photoUrl ?? null,
-    currentTeamId: data.currentTeamId ?? null,
-  };
+  if (data.currentTeamId) {
+    await ensureTeamExists(data.currentTeamId);
+  }
 
   const player = await prisma.player.create({
-    data: normalizedData,
+    data: {
+      name: data.name,
+      birthDate: data.birthDate,
+      nationality: data.nationality,
+      position: data.position,
+      photoUrl: data.photoUrl ?? null,
+      ...(data.currentTeamId
+        ? {
+            currentTeam: {
+              connect: {
+                id: data.currentTeamId,
+              },
+            },
+          }
+        : {}),
+    },
     include: {
       currentTeam: {
         select: {
@@ -148,9 +178,32 @@ export async function createPlayer(data: CreatePlayerInput) {
 }
 
 export async function updatePlayer(id: string, data: UpdatePlayerInput) {
+  const updateData: Prisma.PlayerUpdateInput = {
+    ...(data.name !== undefined ? { name: data.name } : {}),
+    ...(data.birthDate !== undefined ? { birthDate: data.birthDate } : {}),
+    ...(data.nationality !== undefined ? { nationality: data.nationality } : {}),
+    ...(data.position !== undefined ? { position: data.position } : {}),
+    ...(data.photoUrl !== undefined ? { photoUrl: data.photoUrl } : {}),
+  };
+
+  if (data.currentTeamId !== undefined) {
+    if (data.currentTeamId === null) {
+      updateData.currentTeam = {
+        disconnect: true,
+      };
+    } else {
+      await ensureTeamExists(data.currentTeamId);
+      updateData.currentTeam = {
+        connect: {
+          id: data.currentTeamId,
+        },
+      };
+    }
+  }
+
   const player = await prisma.player.update({
     where: { id },
-    data,
+    data: updateData,
     include: {
       currentTeam: {
         select: {

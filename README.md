@@ -195,7 +195,8 @@ curl -X POST http://localhost:3000/auth/login \
 - `nationality` - Nacionalidad
 - `position` - Posición (GK, CB, RB, LB, CDM, CM, CAM, RW, LW, ST)
 - `photoUrl` - URL de foto (opcional)
-- `currentTeamId` - FK a Team
+- `currentTeamId` - FK a Team (para crear/editar)
+- `currentTeamName` - Nombre del equipo actual (en respuesta)
 
 ### Season
 - `id` - UUID único
