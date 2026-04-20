@@ -91,6 +91,11 @@ npm start
 
 El servidor estará en `http://localhost:3000`
 
+### 7. **Swagger / OpenAPI**
+
+- UI interactiva: `http://localhost:3000/docs`
+- Especificación JSON: `http://localhost:3000/docs.json`
+
 ## 📚 API Endpoints
 
 ### Autenticación

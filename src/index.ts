@@ -2,6 +2,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
+import { openApiSpec } from "./docs/openapi";
 import { sendError, sendSuccess } from "./lib/http";
 import { logger } from "./lib/logger";
 import { authRoutes } from "./routes/auth.routes";
@@ -25,6 +27,12 @@ app.use(
 app.get("/health", (_req, res) => {
 	return sendSuccess(res, 200, { ok: true });
 });
+
+app.get("/docs.json", (_req, res) => {
+	return res.status(200).json(openApiSpec);
+});
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 app.use("/auth", authRoutes);
 app.use("/players", playersRoutes);
