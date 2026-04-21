@@ -7,7 +7,9 @@ RUN npm ci
 
 COPY . .
 
-RUN npx prisma generate
+RUN echo "DATABASE_URL=postgresql://dummy:dummy@dummy/dummy\nJWT_SECRET=dummy\nPORT=3000" > .env && \
+    npx prisma generate && \
+    rm .env
 
 RUN npx tsc -p tsconfig.json
 
