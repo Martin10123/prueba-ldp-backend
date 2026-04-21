@@ -7,6 +7,6 @@
     "startCommand": "npx prisma migrate deploy && node dist/index.js"
   },
   "nixpacks": {
-    "node": "22"
+    "node": "24"
   }
 }
