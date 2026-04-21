@@ -30,14 +30,14 @@ vi.mock("../src/lib/jwt", () => ({
 
 import { loginUser, registerUser } from "../src/services/auth.service";
 
-describe("auth.service", () => {
+describe("servicio de autenticación", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.hashMock.mockResolvedValue("hashed-password");
     mocks.signAuthTokenMock.mockReturnValue("signed-token");
   });
 
-  it("registerUser hashes password, lowercases email and returns token", async () => {
+  it("registerUser hashea la contraseña, normaliza el email y retorna token", async () => {
     mocks.prismaUserCreate.mockResolvedValue({
       id: "user-1",
       name: "Ana",
@@ -80,7 +80,7 @@ describe("auth.service", () => {
     });
   });
 
-  it("registerUser maps unique email violations", async () => {
+  it("registerUser mapea violaciones de email único", async () => {
     mocks.prismaUserCreate.mockRejectedValue({ code: "P2002" });
 
     await expect(
@@ -92,7 +92,7 @@ describe("auth.service", () => {
     ).rejects.toThrow("EMAIL_ALREADY_EXISTS");
   });
 
-  it("loginUser returns a token for valid credentials", async () => {
+  it("loginUser retorna un token con credenciales válidas", async () => {
     mocks.prismaUserFindUnique.mockResolvedValue({
       id: "user-1",
       name: "Ana",
@@ -122,7 +122,7 @@ describe("auth.service", () => {
     expect(result.user.email).toBe("ana@example.com");
   });
 
-  it("loginUser rejects invalid credentials", async () => {
+  it("loginUser rechaza credenciales inválidas", async () => {
     mocks.prismaUserFindUnique.mockResolvedValue({
       id: "user-1",
       name: "Ana",

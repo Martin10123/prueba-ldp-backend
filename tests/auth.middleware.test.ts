@@ -1,5 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { PublicUser } from "../src/types/auth";
+
+type AuthenticatedRequest = Request & {
+  user?: PublicUser;
+};
 
 const mocks = vi.hoisted(() => ({
   prismaUserFindUnique: vi.fn(),
@@ -29,12 +34,12 @@ function createResponse() {
   return res;
 }
 
-describe("requireAuth", () => {
+describe("middleware de autenticación", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("rejects missing bearer token", async () => {
+  it("rechaza cuando falta el bearer token", async () => {
     const req = { headers: {} } as Request;
     const res = createResponse();
     const next = vi.fn() as NextFunction;
@@ -50,8 +55,8 @@ describe("requireAuth", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("rejects tokens whose user no longer exists", async () => {
-    const req = { headers: { authorization: "Bearer valid-token" } } as Request;
+  it("rechaza tokens cuyo usuario ya no existe", async () => {
+    const req = { headers: { authorization: "Bearer valid-token" } } as AuthenticatedRequest;
     const res = createResponse();
     const next = vi.fn() as NextFunction;
 
@@ -73,8 +78,8 @@ describe("requireAuth", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("attaches the user to the request and continues", async () => {
-    const req = { headers: { authorization: "Bearer valid-token" } } as Request;
+  it("adjunta el usuario al request y continúa", async () => {
+    const req = { headers: { authorization: "Bearer valid-token" } } as AuthenticatedRequest;
     const res = createResponse();
     const next = vi.fn() as NextFunction;
 
