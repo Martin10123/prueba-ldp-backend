@@ -48,6 +48,7 @@ export type UpdatePlayerInput = Partial<
 export type PlayerSelectableTeam = {
   id: string;
   name: string;
+  logoUrl: string | null;
 };
 
 export type PlayerSelectableOptions = {

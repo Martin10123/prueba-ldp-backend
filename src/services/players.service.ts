@@ -13,6 +13,7 @@ type PlayerWithTeamName = Prisma.PlayerGetPayload<{
     currentTeam: {
       select: {
         name: true;
+        logoUrl: true;
       };
     };
   };
@@ -21,6 +22,7 @@ type PlayerWithTeamName = Prisma.PlayerGetPayload<{
 export type PlayerResponse = Omit<PlayerWithTeamName, "currentTeam" | "currentTeamId"> & {
   currentTeamId: string | null;
   currentTeamName: string | null;
+  currentTeamLogoUrl: string | null;
 };
 
 async function ensureTeamExists(teamId: string): Promise<void> {
@@ -63,6 +65,7 @@ function mapPlayerToResponse(player: PlayerWithTeamName): PlayerResponse {
     ...rest,
     currentTeamId,
     currentTeamName: currentTeam?.name ?? null,
+    currentTeamLogoUrl: currentTeam?.logoUrl ?? null,
   };
 }
 
@@ -125,6 +128,7 @@ export async function listPlayers({ filters, pagination }: ListPlayersParams): P
         currentTeam: {
           select: {
             name: true,
+            logoUrl: true,
           },
         },
       },
@@ -160,6 +164,7 @@ export async function getPlayerById(id: string) {
       currentTeam: {
         select: {
           name: true,
+          logoUrl: true,
         },
       },
     },
@@ -178,6 +183,7 @@ export async function listPlayerSelectableOptions(): Promise<PlayerSelectableOpt
       select: {
         id: true,
         name: true,
+        logoUrl: true,
       },
       orderBy: {
         name: "asc",
@@ -230,6 +236,7 @@ export async function createPlayer(data: CreatePlayerInput) {
       currentTeam: {
         select: {
           name: true,
+          logoUrl: true,
         },
       },
     },
@@ -286,6 +293,7 @@ export async function updatePlayer(id: string, data: UpdatePlayerInput) {
       currentTeam: {
         select: {
           name: true,
+          logoUrl: true,
         },
       },
     },
@@ -318,6 +326,7 @@ export async function deletePlayer(id: string) {
       currentTeam: {
         select: {
           name: true,
+          logoUrl: true,
         },
       },
     },

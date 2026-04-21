@@ -134,6 +134,7 @@ export const openApiSpec = {
           photoUrl: { type: "string", format: "uri", nullable: true },
           currentTeamId: { type: "string", nullable: true },
           currentTeamName: { type: "string", nullable: true },
+          currentTeamLogoUrl: { type: "string", format: "uri", nullable: true },
           isActive: { type: "boolean", example: true },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
@@ -238,8 +239,14 @@ export const openApiSpec = {
         properties: {
           id: { type: "string", example: "cm8w2f9x80000j8x9z6v8m8a1" },
           name: { type: "string", example: "Inter" },
+          logoUrl: {
+            type: "string",
+            format: "uri",
+            nullable: true,
+            example: "https://upload.wikimedia.org/wikipedia/en/0/05/SSC_Internazionale_Milano.svg",
+          },
         },
-        required: ["id", "name"],
+        required: ["id", "name", "logoUrl"],
       },
       PlayerSelectableOptionsData: {
         type: "object",
