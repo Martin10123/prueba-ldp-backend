@@ -32,7 +32,7 @@ const teams: SeedTeam[] = [
   { name: "Manchester City", country: "England", logoUrl: "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC.svg" },
   { name: "Liverpool", country: "England", logoUrl: "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg" },
   { name: "Arsenal", country: "England", logoUrl: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" },
-  { name: "Paris Saint-Germain", country: "France", logoUrl: "https://upload.wikimedia.org/wikipedia/en/2/2c/Paris_Saint-Germain_FC.svg" },
+  { name: "Paris Saint-Germain", country: "France", logoUrl: "https://tmssl.akamaized.net//images/wappen/head/583.png?lm=1728026461" },
   { name: "Bayern Munich", country: "Germany", logoUrl: "https://upload.wikimedia.org/wikipedia/en/4/4d/FC_Bayern_München.svg" },
   { name: "AC Milan", country: "Italy", logoUrl: "https://upload.wikimedia.org/wikipedia/en/9/9c/AC_Milan.svg" },
   { name: "Inter", country: "Italy", logoUrl: "https://upload.wikimedia.org/wikipedia/en/0/05/SSC_Internazionale_Milano.svg" },
