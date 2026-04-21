@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npx prisma migrate deploy && node dist/prisma/seed.js && node dist/index.js"
+    "startCommand": "npx prisma migrate deploy && node dist/index.js"
   },
   "nixpacks": {
     "node": "24"
